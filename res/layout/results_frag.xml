@@ -5,12 +5,12 @@
     android:background="#ffffff" >
 
     <TextView
-        android:id="@+id/config_title"
+        android:id="@+id/result_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginTop="24dp"
-        android:text="Choose configuration"
+        android:text="@string/results_title"
         android:textSize="20sp" />
 
 
@@ -79,6 +79,6 @@
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:onClick="onReplayClicked"
-        android:text="Replay" />
+        android:text="@string/replay_btn" />
 
 </RelativeLayout>

@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">Blink Arbiter</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="results_title">Blink activity: </string>
+    <string name="replay_btn">Replay</string>
 
 </resources>

@@ -37,13 +37,15 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 	private static final String TAG = "com_ynemov_blinkarbiter";
-	private static final String mResFaceCascade = "haarcascade_frontalface_alt.xml";
-	private static final String mResEyesCascade = "haarcascade_eye_tree_eyeglasses.xml";
+	private static final String RESULTS_FRAGMENT = "RESULTS_FRAGMENT";
+	private static final String RES_FACE_CASCADE = "haarcascade_frontalface_alt.xml";
+	private static final String RES_EYES_CASCADE = "haarcascade_eye_tree_eyeglasses.xml";
 	private static final String CASCADE_INIT_ERROR = "Cascede classifiers weren't initiated!";
 
 	private static final float FACE_SIZE_PERCENTAGE = 0.3f;
@@ -52,9 +54,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private static final int DETECTION_STEP_DURATION = 1000; // 1s
 	private static final int SHOW_DURATION = 1000; // 1s
 	private static final String BLINK_MSG = "Blink is detected"; // Message to place if blink is detected
-	private String[] mRawRes = {mResFaceCascade, mResEyesCascade};
+	private String[] mRawRes = {RES_FACE_CASCADE, RES_EYES_CASCADE};
 
 	private CameraBridgeViewBase mOpenCvCameraView;
+	//	private TextView mResults;
 	private CascadeClassifier mFaceCascade;
 	private CascadeClassifier mEyesCascade;
 	private Mat mGrayscaleImage;
@@ -62,7 +65,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private Toast mToast;
 
 	FragmentManager mFragmentManager;
-	Fragment mConfigurationFragment = new ResultsFragment();
+	Fragment mResultsFragment = new ResultsFragment();
 
 	private int mPreviousEyesState = -1;
 	private boolean mIsEyeClosingDetected = false;
@@ -106,10 +109,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				runOnUiThread(new Runnable() {
 
 					@Override
-					public void run() {						
+					public void run() {
+						// TODO Replace to canonical (not hacky) routine for get fragment UI updated
+						mResultsFragment = new ResultsFragment(
+								getResources().getString(R.string.results_title).toString()
+								+ " " + mBlinkCounter + ((mBlinkCounter == 1) ? " blink" : " blinks"));
 						FragmentTransaction transaction = mFragmentManager.beginTransaction();
-						transaction.attach(mConfigurationFragment);
-						transaction.replace(R.id.config_container, mConfigurationFragment);
+						transaction.attach(mResultsFragment);
+						transaction.replace(R.id.config_container, mResultsFragment, RESULTS_FRAGMENT);
 						transaction.addToBackStack(null);
 						transaction.commit();
 
@@ -159,6 +166,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
 		mOpenCvCameraView.setCvCameraViewListener(this);
 		mOpenCvCameraView.disableView();
+
+		//		mResults = (TextView) findViewById(R.id.result_title);
 
 		(new AsyncTask<String, Void, Boolean>() {
 
@@ -306,7 +315,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				mBlinkStartTime = System.currentTimeMillis();
 				mIsEyeClosingDetected = true;
 			}
-			else if(eyesArray.length == 2 && mIsEyeClosingDetected) {
+			else if(eyesArray.length == 2 && mIsEyeClosingDetected && mIsDetectionOn) {
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
@@ -342,7 +351,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 	public void onReplayClicked(View v) {
 		FragmentTransaction transaction = mFragmentManager.beginTransaction();
-		transaction.detach(mConfigurationFragment);
+		transaction.detach(mResultsFragment);
 		transaction.commit();
 		mIsDetectionOn = true;
 	}
