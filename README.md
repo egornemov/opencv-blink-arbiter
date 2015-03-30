@@ -1,7 +1,5 @@
 # opencv-blink-arbiter
-**Goal:** 
-
-Detecting specific type of human face motions using camera on a mobile device
+**Goal:** Detecting specific type of human face motions using camera on a mobile device
 
 **Requirements:** 
 
