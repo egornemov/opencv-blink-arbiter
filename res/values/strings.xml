@@ -3,6 +3,7 @@
 
     <string name="app_name">Blink Arbiter</string>
     <string name="results_title">Blink activity: </string>
+    <string name="results_details">Blink activity details (appearance time, ms): </string>
     <string name="replay_btn">Replay</string>
 
 </resources>

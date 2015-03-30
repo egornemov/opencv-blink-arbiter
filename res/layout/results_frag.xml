@@ -13,58 +13,6 @@
         android:text="@string/results_title"
         android:textSize="20sp" />
 
-
-    <!-- Test Results -->
-
-<!-- 
-    <LinearLayout
-        android:id="@+id/ll_test_results"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/blur_config"
-        android:orientation="vertical" >
-
-        <TextView
-            android:id="@+id/test_results"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="24dp"
-            android:text="Test results (initialization time, ms)"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/rs_test_results"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/blur_rs"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/hwui_test_results"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/blur_hwui"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/hwui_anim_test_results"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/blur_hwui_anim"
-            android:textSize="16sp" />
-    </LinearLayout>
- -->
     <!-- Action -->
 
     <Button
@@ -80,5 +28,34 @@
         android:gravity="center"
         android:onClick="onReplayClicked"
         android:text="@string/replay_btn" />
+
+    <!-- Test Results -->
+
+    <LinearLayout
+        android:id="@+id/ll_test_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/config_done"
+        android:layout_below="@id/result_title"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/result_details_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="24dp"
+            android:text="@string/results_details"
+            android:textSize="20sp" />
+
+        <ListView
+            android:id="@+id/result_details"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
 
 </RelativeLayout>

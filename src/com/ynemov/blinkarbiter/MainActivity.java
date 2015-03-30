@@ -109,11 +109,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 				runOnUiThread(new Runnable() {
 
 					@Override
-					public void run() {
+					public void run() {						
 						// TODO Replace to canonical (not hacky) routine for get fragment UI updated
 						mResultsFragment = new ResultsFragment(
-								getResources().getString(R.string.results_title).toString()
-								+ " " + mBlinkCounter + ((mBlinkCounter == 1) ? " blink" : " blinks"));
+								getResources().getString(R.string.results_title).toString() + " " + mBlinkCounter + ((mBlinkCounter == 1) ? " blink" : " blinks")
+								, mBlinkingActivity);
 						FragmentTransaction transaction = mFragmentManager.beginTransaction();
 						transaction.attach(mResultsFragment);
 						transaction.replace(R.id.config_container, mResultsFragment, RESULTS_FRAGMENT);
