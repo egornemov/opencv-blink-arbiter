@@ -45,8 +45,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 	private static final float FACE_SIZE_PERCENTAGE = 0.3f;
 
-	private static final int DETECTION_DURATION = 10000; // 10s
-	private static final int SHOW_DURATION = 1000; // 10s
+	private static final int DETECTION_NUMBER_OF_STEPS = 16; // 16 intervals
+	private static final int DETECTION_STEP_DURATION = 1000; // 1s
+	private static final int SHOW_DURATION = 1000; // 1s
 	private static final String BLINK_MSG = "Blink is detected"; // Message to place if blink is detected
 	private String[] mRawRes = {mResFaceCascade, mResEyesCascade};
 
@@ -86,35 +87,48 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 	class BlinkCounterTask extends TimerTask {
 
+		int mCurrentStep = 0;
+
 		@Override
 		public void run() {
-			runOnUiThread(new Runnable() {
+			if((++mCurrentStep) == DETECTION_NUMBER_OF_STEPS) {
+				runOnUiThread(new Runnable() {
 
-				@Override
-				public void run() {
-					mToast.cancel();
-					mToast = Toast.makeText(getApplicationContext(), 
-							"TOTAL NUMBER OF BLINKS: " + mBlinkCounter, DETECTION_DURATION);
-					mToast.show();
+					@Override
+					public void run() {
+						mToast.cancel(); 
+						mToast = Toast.makeText(getApplicationContext(), 
+								"TOTAL NUMBER OF BLINKS: " + mBlinkCounter, SHOW_DURATION);
+						mToast.show();
 
-					setupInitialCounterState();
-				}
-			});			
+						setupInitialCounterState();
+					}
+				});
+				mCurrentStep = 0;
+			}
+			else if((DETECTION_NUMBER_OF_STEPS - mCurrentStep) % 5 == 0){
+				runOnUiThread(new Runnable() {
+					
+					@Override
+					public void run() {
+						mToast.cancel(); 
+						mToast = Toast.makeText(getApplicationContext(), (DETECTION_NUMBER_OF_STEPS - mCurrentStep) + " s left", Toast.LENGTH_SHORT);
+						mToast.show();
+					}
+				});
+			}
 		}
 	}
 
 	BlinkCounterTask mBlinkCounterTask = new BlinkCounterTask();
 	Timer mTimer = new Timer();
-	
+
 	private void setupInitialCounterState() {
 		mPreviousEyesState = -1;
 		mIsEyeClosingDetected = false;
 		mBlinkStartTime = 0;
 		mBlinkCounter = 0;
 		mBlinkingActivity.clear();
-		// TODO timer reopen 
-//		mTimer = new Timer();
-//		mTimer.schedule(mBlinkCounterTask, DETECTION_DURATION);		
 	}
 
 	@Override
@@ -189,7 +203,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			protected void onPostExecute(Boolean isSuccess) {
 				if(isSuccess) {
 					mOpenCvCameraView.enableView();
-					mTimer.schedule(mBlinkCounterTask, DETECTION_DURATION);
+					mTimer.scheduleAtFixedRate(mBlinkCounterTask, 0, DETECTION_STEP_DURATION);
 				}
 				else {
 					mToast.cancel();
