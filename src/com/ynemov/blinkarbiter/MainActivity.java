@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -36,21 +40,27 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private static final String TAG = "com_ynemov_blinkarbiter";
 	private static final String mResFaceCascade = "haarcascade_frontalface_alt.xml";
 	private static final String mResEyesCascade = "haarcascade_eye_tree_eyeglasses.xml";
+	private static final String CASCADE_INIT_ERROR = "Cascede classifiers weren't initiated!";
 
-	private static final int DETECT_DURATION = 10000; // 10s
+	private static final float FACE_SIZE_PERCENTAGE = 0.3f;
+
+	private static final int DETECTION_DURATION = 10000; // 10s
 	private static final int SHOW_DURATION = 1000; // 10s
-	private static final String BLINK_MSG = "Blink is detected!"; // 10s
-
+	private static final String BLINK_MSG = "Blink is detected"; // Message to place if blink is detected
 	private String[] mRawRes = {mResFaceCascade, mResEyesCascade};
 
 	private CameraBridgeViewBase mOpenCvCameraView;
-	private CascadeClassifier mFaceCascade;// = new CascadeClassifier();
+	private CascadeClassifier mFaceCascade;
 	private CascadeClassifier mEyesCascade;
 	private Mat mGrayscaleImage;
 	private int mAbsoluteFaceSize;
-
 	private Toast mToast;
+
+	private int mPreviousEyesState = -1;
+	private boolean mIsEyeClosingDetected = false;
+	private long mBlinkStartTime = 0;
 	private int mBlinkCounter = 0;
+	private List<Long> mBlinkingActivity = new ArrayList<Long>();
 
 	static {
 		if (!OpenCVLoader.initDebug()) {
@@ -63,17 +73,48 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		public void onManagerConnected(int status) {
 			switch (status) {
 			case LoaderCallbackInterface.SUCCESS:
-			{
 				Log.i(TAG, "OpenCV loaded successfully");
 				mOpenCvCameraView.enableView();
-			} break;
+				break;
 			default:
-			{
 				super.onManagerConnected(status);
-			} break;
+				break;
 			}
 		}
 	};
+
+	class BlinkCounterTask extends TimerTask {
+
+		@Override
+		public void run() {
+			runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					mToast.cancel();
+					mToast = Toast.makeText(getApplicationContext(), 
+							"TOTAL NUMBER OF BLINKS: " + mBlinkCounter, DETECTION_DURATION);
+					mToast.show();
+
+					setupInitialCounterState();
+				}
+			});			
+		}
+	}
+
+	BlinkCounterTask mBlinkCounterTask = new BlinkCounterTask();
+	Timer mTimer = new Timer();
+	
+	private void setupInitialCounterState() {
+		mPreviousEyesState = -1;
+		mIsEyeClosingDetected = false;
+		mBlinkStartTime = 0;
+		mBlinkCounter = 0;
+		mBlinkingActivity.clear();
+		// TODO timer reopen 
+//		mTimer = new Timer();
+//		mTimer.schedule(mBlinkCounterTask, DETECTION_DURATION);		
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -95,8 +136,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			protected Boolean doInBackground(String... params) {
 
 				try {
-					// TODO remove if success
-					//					InputStream ims1 = getAssets().open(params[0]);
+					// First URL
 					{
 						// Copy the resource into a temp file so OpenCV can load it
 						InputStream is = getResources().openRawResource(R.raw.haarcascade_frontalface_alt);
@@ -113,14 +153,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 						is.close();
 						os.close();
 
-						Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-						Log.i(TAG, "PATH=" + mCascadeFile.getAbsolutePath());
 						// Load the cascade classifier
 						mFaceCascade = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-						Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 					}
 
-					//					InputStream ims2 = getAssets().open(params[1]);
+					// Second URL
 					{
 						// Copy the resource into a temp file so OpenCV can load it
 						InputStream is = getResources().openRawResource(R.raw.haarcascade_eye_tree_eyeglasses);
@@ -138,17 +175,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 						os.close();
 
 						// Load the cascade classifier
-						Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-						Log.i(TAG, "PATH=" + mCascadeFile.getAbsolutePath());
 						mEyesCascade = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-						Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-					}
+					}					
 
-					//					if(!mFaceCascade.load(params[0]) || !mEyesCascade.load(params[1])) {
-					//						return false;
-					//					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				return true;
@@ -157,20 +187,16 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			@Override
 			protected void onPostExecute(Boolean isSuccess) {
 				if(isSuccess) {
-					mToast.cancel();
-					mToast = Toast.makeText(getApplicationContext(), "TWO SUCCESS LOADS", Toast.LENGTH_SHORT);
-					mToast.show();
 					mOpenCvCameraView.enableView();
+					mTimer.schedule(mBlinkCounterTask, DETECTION_DURATION);
 				}
 				else {
-					//					Toast toast
 					mToast.cancel();
-					mToast = Toast.makeText(getApplicationContext(), "SMTHNG ARE GOING WRONG", Toast.LENGTH_SHORT);
+					mToast = Toast.makeText(getApplicationContext(), CASCADE_INIT_ERROR, Toast.LENGTH_SHORT);
 					mToast.show();
 				}
 				super.onPostExecute(isSuccess);
 			}
-
 		}).execute(mRawRes);
 	}
 
@@ -198,157 +224,88 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		mGrayscaleImage = new Mat(height, width, CvType.CV_8UC4);
 
 		// The faces will be a 30% of the height of the screen
-		mAbsoluteFaceSize = (int) (height * 0.3);
+		mAbsoluteFaceSize = (int) (height * FACE_SIZE_PERCENTAGE);
 	}
 
 	@Override
-	public void onCameraViewStopped() {
-		// TODO Auto-generated method stub
-
-	}
-
-	//	MatOfRect mFaces = new MatOfRect();
-	//	MatOfRect mEyes = new MatOfRect();
-
-	//	Size mMinSize = new Size(mAbsoluteFaceSize, mAbsoluteFaceSize);
-	//	Size mMaxSize = new Size();
+	public void onCameraViewStopped() {}
 
 	private Scalar mClr1 = new Scalar(0, 255, 0, 255);
 	private Scalar mClr2 = new Scalar(255, 0, 0, 255);
 	private Point mPt1 = new Point();
 	private Point mPt2 = new Point();
 
-	private int mPreviousEyesState = -1;
-	private boolean mIsBlinkDetected = false;
-
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		Mat inputMat = inputFrame.rgba();
-		// Create a grayscale image
 		Imgproc.cvtColor(inputMat, mGrayscaleImage, Imgproc.COLOR_RGBA2RGB);
 
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		MatOfRect mFaces = new MatOfRect();
-		//		MatOfRect faces = new MatOfRect();
-
 		Size mMinSize = new Size(mAbsoluteFaceSize, mAbsoluteFaceSize);
 		Size mMaxSize = new Size();
 
-		// Use the classifier to detect faces
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		if (mFaceCascade != null) {
-			//			Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-			mFaceCascade.detectMultiScale(mGrayscaleImage, mFaces, 1.1, 2, 2,
-					mMinSize, mMaxSize);
-			//					new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-			//			face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+			mFaceCascade.detectMultiScale(mGrayscaleImage, mFaces, 1.1, 2, 2, mMinSize, mMaxSize);
 		}
 
-
-		// If there are any faces found, draw a rectangle around it
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		Rect[] facesArray = mFaces.toArray();
-		//		boolean[] isEyesTrackingBegun = new boolean[facesArray.length];
-		//		for (int i = 0; i < isEyesTrackingBegun.length; ++i) {
-		//			isEyesTrackingBegun[i] = false;
-		//		}
 
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-
-		// TODO use only first face
-		for (int i = 0; i < facesArray.length; ++i) {
-			//			Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
+		/*
+		 *  In case of simplicity first detected face is used
+		 *  Replace comment from FOR-loop in case of advances detection
+		 */
+		//		for (int i = 0; < facesArray.length; ++i) 
+		if(facesArray.length > 0) {
+			int i = 0;
+			/*
+			 *  Face rectangle are used for debug purposes
+			 *  Replace comments if has to debug
+			 */
 			Core.rectangle(inputMat, facesArray[i].tl(), facesArray[i].br(), mClr1, 3);
-			//		    Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-			//		    ellipse( frame, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
-
-			//		    Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-			//		    ellipse( frame, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
 
 			Mat faceROI = mGrayscaleImage.submat(facesArray[i]);
 			MatOfRect mEyes = new MatOfRect();
 
 			//-- In each face, detect eyes
-			mEyesCascade.detectMultiScale(faceROI, mEyes, 1.1, 2, 2,
-					mMinSize, mMaxSize);
-			//					new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-
-			//		    		1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+			mEyesCascade.detectMultiScale(faceROI, mEyes, 1.1, 2, 2, mMinSize, mMaxSize);
 			Rect[] eyesArray = mEyes.toArray();
 
-			if(eyesArray.length == 1 && mPreviousEyesState == 2) {
-				mIsBlinkDetected = true;
-				
+			// The condition handle only simple event "two eyes are open -> one (or two) is closed"
+			if(eyesArray.length < 2 && mPreviousEyesState == 2) {
+				mBlinkStartTime = System.currentTimeMillis();
+				mIsEyeClosingDetected = true;
+			}
+			else if(eyesArray.length == 2 && mIsEyeClosingDetected) {
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
 						mToast.cancel();
-						mToast = Toast.makeText(getApplicationContext(), BLINK_MSG, SHOW_DURATION);
+						mToast = Toast.makeText(getApplicationContext(), 
+								"#" + (mBlinkCounter++) + " " + BLINK_MSG, SHOW_DURATION);
 						mToast.show();
+						mBlinkingActivity.add(mBlinkStartTime);
 					}
 				});
+				mIsEyeClosingDetected = false;	
 			}
-			else if(eyesArray.length == 2) {
-				mIsBlinkDetected = false;	
-			}
-			//			
-			//			if(isEyesTrackingBegun[i] && ) {
-			//				
-			//			}
 
+			/*
+			 *  Eyes rectangles are used for debug purposes
+			 *  Replace comments if has to debug
+			 */
 			for(int j = 0; j < eyesArray.length; ++j) {
-				mPt1.x = facesArray[i].x + eyesArray[j].x;// - eyesArray[j].width;// * 0.5;
-				mPt1.y = facesArray[i].y + eyesArray[j].y;// - eyesArray[j].height;// * 0.5;
+				mPt1.x = facesArray[i].x + eyesArray[j].x;
+				mPt1.y = facesArray[i].y + eyesArray[j].y;
 
-				mPt2.x = facesArray[i].x + eyesArray[j].x + eyesArray[j].width;// - eyesArray[j].width * 0.5;
-				mPt2.y = facesArray[i].y + eyesArray[j].y + eyesArray[j].height;// - eyesArray[j].height * 0.5;
+				mPt2.x = facesArray[i].x + eyesArray[j].x + eyesArray[j].width;
+				mPt2.y = facesArray[i].y + eyesArray[j].y + eyesArray[j].height;
 
-				Core.rectangle(inputMat, 
-						mPt1, mPt2,
-						//						eyesArray[j].tl(), eyesArray[j].br(), 
-						mClr2, 2);
-				//		       Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
-				//		       int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-				//		       circle( frame, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-				//		       
-				//		       
+				Core.rectangle(inputMat, mPt1, mPt2, mClr2, 2);
 			}
 
 			mPreviousEyesState = eyesArray.length;
 		}
 
-		//		Log.d(TAG, "Faces detected: " + facesArray.length + " (" + System.currentTimeMillis() + ")"); 
-		//		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		return inputMat;
-		//		return inputFrame.rgba();
 	}
-
-	//	private void eyesTrackingIsBegan() {
-	//		
-	//		++mBlinkCounter
-	//		// TODO Auto-generated method stub
-	//		
-	//	}
-
-
-
-	//	@Override
-	//	public boolean onCreateOptionsMenu(Menu menu) {
-	//		// Inflate the menu; this adds items to the action bar if it is present.
-	//		getMenuInflater().inflate(R.menu.main, menu);
-	//		return true;
-	//	}
-	//
-	//	@Override
-	//	public boolean onOptionsItemSelected(MenuItem item) {
-	//		// Handle action bar item clicks here. The action bar will
-	//		// automatically handle clicks on the Home/Up button, so long
-	//		// as you specify a parent activity in AndroidManifest.xml.
-	//		int id = item.getItemId();
-	//		if (id == R.id.action_settings) {
-	//			return true;
-	//		}
-	//		return super.onOptionsItemSelected(item);
-	//	}
 }
