@@ -270,10 +270,10 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	@Override
 	public void onCameraViewStopped() {}
 
-	private Scalar mClr1 = new Scalar(0, 255, 0, 255);
-	private Scalar mClr2 = new Scalar(255, 0, 0, 255);
-	private Point mPt1 = new Point();
-	private Point mPt2 = new Point();
+	//	private Scalar mClr1 = new Scalar(0, 255, 0, 255);
+	//	private Scalar mClr2 = new Scalar(255, 0, 0, 255);
+	//	private Point mPt1 = new Point();
+	//	private Point mPt2 = new Point();
 
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
@@ -301,7 +301,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			 *  Face rectangle are used for debug purposes
 			 *  Replace comments if has to debug
 			 */
-			Core.rectangle(inputMat, facesArray[i].tl(), facesArray[i].br(), mClr1, 3);
+			//			Core.rectangle(inputMat, facesArray[i].tl(), facesArray[i].br(), mClr1, 3);
 
 			Mat faceROI = mGrayscaleImage.submat(facesArray[i]);
 			MatOfRect mEyes = new MatOfRect();
@@ -333,15 +333,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			 *  Eyes rectangles are used for debug purposes
 			 *  Replace comments if has to debug
 			 */
-			for(int j = 0; j < eyesArray.length; ++j) {
-				mPt1.x = facesArray[i].x + eyesArray[j].x;
-				mPt1.y = facesArray[i].y + eyesArray[j].y;
-
-				mPt2.x = facesArray[i].x + eyesArray[j].x + eyesArray[j].width;
-				mPt2.y = facesArray[i].y + eyesArray[j].y + eyesArray[j].height;
-
-				Core.rectangle(inputMat, mPt1, mPt2, mClr2, 2);
-			}
+			//			for(int j = 0; j < eyesArray.length; ++j) {
+			//				mPt1.x = facesArray[i].x + eyesArray[j].x;
+			//				mPt1.y = facesArray[i].y + eyesArray[j].y;
+			//
+			//				mPt2.x = facesArray[i].x + eyesArray[j].x + eyesArray[j].width;
+			//				mPt2.y = facesArray[i].y + eyesArray[j].y + eyesArray[j].height;
+			//
+			//				Core.rectangle(inputMat, mPt1, mPt2, mClr2, 2);
+			//			}
 
 			mPreviousEyesState = eyesArray.length;
 		}
