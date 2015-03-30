@@ -27,12 +27,15 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -58,11 +61,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private int mAbsoluteFaceSize;
 	private Toast mToast;
 
+	FragmentManager mFragmentManager;
+	Fragment mConfigurationFragment = new ResultsFragment();
+
 	private int mPreviousEyesState = -1;
 	private boolean mIsEyeClosingDetected = false;
 	private long mBlinkStartTime = 0;
 	private int mBlinkCounter = 0;
 	private List<Long> mBlinkingActivity = new ArrayList<Long>();
+	private boolean mIsDetectionOn = false;
 
 	static {
 		if (!OpenCVLoader.initDebug()) {
@@ -91,15 +98,20 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 		@Override
 		public void run() {
+			if(!mIsDetectionOn) {
+				return;
+			}
+
 			if((++mCurrentStep) == DETECTION_NUMBER_OF_STEPS) {
 				runOnUiThread(new Runnable() {
 
 					@Override
-					public void run() {
-						mToast.cancel(); 
-						mToast = Toast.makeText(getApplicationContext(), 
-								"TOTAL NUMBER OF BLINKS: " + mBlinkCounter, SHOW_DURATION);
-						mToast.show();
+					public void run() {						
+						FragmentTransaction transaction = mFragmentManager.beginTransaction();
+						transaction.attach(mConfigurationFragment);
+						transaction.replace(R.id.config_container, mConfigurationFragment);
+						transaction.addToBackStack(null);
+						transaction.commit();
 
 						setupInitialCounterState();
 					}
@@ -108,7 +120,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			}
 			else if((DETECTION_NUMBER_OF_STEPS - mCurrentStep) % 5 == 0){
 				runOnUiThread(new Runnable() {
-					
+
 					@Override
 					public void run() {
 						mToast.cancel(); 
@@ -129,6 +141,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		mBlinkStartTime = 0;
 		mBlinkCounter = 0;
 		mBlinkingActivity.clear();
+		mIsDetectionOn = false;
 	}
 
 	@Override
@@ -140,6 +153,8 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.activity_main);
+		mFragmentManager = getFragmentManager();
+
 		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.HelloOpenCvView);
 		mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
 		mOpenCvCameraView.setCvCameraViewListener(this);
@@ -203,6 +218,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 			protected void onPostExecute(Boolean isSuccess) {
 				if(isSuccess) {
 					mOpenCvCameraView.enableView();
+					mIsDetectionOn = true;
 					mTimer.scheduleAtFixedRate(mBlinkCounterTask, 0, DETECTION_STEP_DURATION);
 				}
 				else {
@@ -322,5 +338,12 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		}
 
 		return inputMat;
+	}
+
+	public void onReplayClicked(View v) {
+		FragmentTransaction transaction = mFragmentManager.beginTransaction();
+		transaction.detach(mConfigurationFragment);
+		transaction.commit();
+		mIsDetectionOn = true;
 	}
 }

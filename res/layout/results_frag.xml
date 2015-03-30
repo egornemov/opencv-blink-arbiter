@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff" >
+
+    <TextView
+        android:id="@+id/config_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="24dp"
+        android:text="Choose configuration"
+        android:textSize="20sp" />
+
+
+    <!-- Test Results -->
+
+<!-- 
+    <LinearLayout
+        android:id="@+id/ll_test_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/blur_config"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/test_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="24dp"
+            android:text="Test results (initialization time, ms)"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/rs_test_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/blur_rs"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/hwui_test_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/blur_hwui"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/hwui_anim_test_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/blur_hwui_anim"
+            android:textSize="16sp" />
+    </LinearLayout>
+ -->
+    <!-- Action -->
+
+    <Button
+        android:id="@+id/config_done"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:onClick="onReplayClicked"
+        android:text="Replay" />
+
+</RelativeLayout>
