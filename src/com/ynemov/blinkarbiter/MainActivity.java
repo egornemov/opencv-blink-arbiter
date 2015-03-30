@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Currency;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -16,6 +15,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
@@ -44,11 +44,11 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 	private CascadeClassifier mEyesCascade;
 	private Mat mGrayscaleImage;
 	private int mAbsoluteFaceSize;
-	
+
 	static {
-	    if (!OpenCVLoader.initDebug()) {
-	        // Handle initialization error
-	    }
+		if (!OpenCVLoader.initDebug()) {
+			// Handle initialization error
+		}
 	}
 
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -194,6 +194,17 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		// TODO Auto-generated method stub
 
 	}
+	
+//	MatOfRect mFaces = new MatOfRect();
+//	MatOfRect mEyes = new MatOfRect();
+	
+//	Size mMinSize = new Size(mAbsoluteFaceSize, mAbsoluteFaceSize);
+//	Size mMaxSize = new Size();
+	
+	Scalar mClr1 = new Scalar(0, 255, 0, 255);
+	Scalar mClr2 = new Scalar(255, 0, 0, 255);
+	Point mPt1 = new Point();
+	Point mPt2 = new Point();
 
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
@@ -203,24 +214,65 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 		Imgproc.cvtColor(inputMat, mGrayscaleImage, Imgproc.COLOR_RGBA2RGB);
 
 		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-		MatOfRect faces = new MatOfRect();
+		MatOfRect mFaces = new MatOfRect();
+		//		MatOfRect faces = new MatOfRect();
 
+		Size mMinSize = new Size(mAbsoluteFaceSize, mAbsoluteFaceSize);
+		Size mMaxSize = new Size();
+		
 		// Use the classifier to detect faces
 		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
 		if (mFaceCascade != null) {
 			Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-			mFaceCascade.detectMultiScale(mGrayscaleImage, faces, 1.1, 2, 2,
-					new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+			mFaceCascade.detectMultiScale(mGrayscaleImage, mFaces, 1.1, 2, 2,
+					mMinSize, mMaxSize);
+//					new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+			//			face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
 		}
 
 
 		// If there are any faces found, draw a rectangle around it
 		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-		Rect[] facesArray = faces.toArray();
+		Rect[] facesArray = mFaces.toArray();
 		Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-		for (int i = 0; i <facesArray.length; i++) {
+		
+		for (int i = 0; i < facesArray.length; ++i) {
 			Log.i(TAG, "L=" + Thread.currentThread().getStackTrace()[2].getLineNumber());
-			Core.rectangle(inputMat, facesArray[i].tl(), facesArray[i].br(), new Scalar(0, 255, 0, 255), 3);
+			Core.rectangle(inputMat, facesArray[i].tl(), facesArray[i].br(), mClr1, 3);
+			//		    Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
+			//		    ellipse( frame, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+
+			//		    Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
+			//		    ellipse( frame, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+
+			Mat faceROI = mGrayscaleImage.submat(facesArray[i]);
+			MatOfRect mEyes = new MatOfRect();
+
+			//-- In each face, detect eyes
+			mEyesCascade.detectMultiScale(faceROI, mEyes, 1.1, 2, 2,
+					mMinSize, mMaxSize);
+//					new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
+
+			//		    		1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+			Rect[] eyesArray = mEyes.toArray();
+			
+			for(int j = 0; j < eyesArray.length; ++j) {
+				mPt1.x = facesArray[i].x + eyesArray[j].x;// - eyesArray[j].width;// * 0.5;
+				mPt1.y = facesArray[i].y + eyesArray[j].y;// - eyesArray[j].height;// * 0.5;
+				
+				mPt2.x = facesArray[i].x + eyesArray[j].x + eyesArray[j].width;// - eyesArray[j].width * 0.5;
+				mPt2.y = facesArray[i].y + eyesArray[j].y + eyesArray[j].height;// - eyesArray[j].height * 0.5;
+				
+				Core.rectangle(inputMat, 
+						mPt1, mPt2,
+//						eyesArray[j].tl(), eyesArray[j].br(), 
+						mClr2, 2);
+				//		       Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
+				//		       int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+				//		       circle( frame, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+				//		       
+				//		       
+			}
 		}
 
 		Log.d(TAG, "Faces detected: " + facesArray.length + " (" + System.currentTimeMillis() + ")"); 
